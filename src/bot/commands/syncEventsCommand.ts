@@ -23,8 +23,7 @@ export class SyncEventsCommand extends BaseCommand {
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply();
-    this.adminRoleId =
-      this.adminRoleId ?? this.services.config.get(CONFIG_KEY.DISCORD_GUILD_ADMIN_ROLE_ID);
+    this.adminRoleId ??= this.services.config.get(CONFIG_KEY.DISCORD_GUILD_ADMIN_ROLE_ID);
     const userRoles = (interaction.member?.roles as GuildMemberRoleManager)?.cache;
 
     if (!userRoles?.has(this.adminRoleId)) {
@@ -38,6 +37,7 @@ export class SyncEventsCommand extends BaseCommand {
     let syncedEventsCount = 0;
 
     for (const event of events) {
+      // TODO - improve event matching logic to avoid duplicates and conflicts (e.g. if event name is changed, or if there are multiple events with the same name)
       if (existingEvents?.some((e) => e.name === event.name)) {
         skippedEventsCount++;
         continue;
