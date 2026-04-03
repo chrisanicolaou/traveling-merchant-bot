@@ -23,6 +23,6 @@ jspm_packages/
 .pnpm-store
 
 # other
-*docker-compose.yaml
+docker-compose.*yaml
 data/
 .vscode/
