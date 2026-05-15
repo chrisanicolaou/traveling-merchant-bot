@@ -1,3 +1,5 @@
+import type { ExchangeRateProvider } from "../../api/exchange-rate/exchangeRateProvider";
+import type { MarketPriceProvider } from "../../api/market-price/marketPriceProvider";
 import type { CacheService } from "../../services/cacheService";
 import type { CardsService } from "../../services/cardsService";
 import type { ConfigService } from "../../services/configService";
@@ -12,4 +14,6 @@ export type Services = {
   printingTraitsService: PrintingTraitsService;
   tradesService: TradesService;
   eventsService: EventsService;
+  marketPriceProvider: MarketPriceProvider;
+  exchangeRateProvider: ExchangeRateProvider;
 };

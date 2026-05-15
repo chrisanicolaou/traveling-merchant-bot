@@ -10,7 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { PrintingTraits, type TradeDirection } from "../shared/enums";
-import { defineRelations, sql } from "drizzle-orm";
+import { type BuildQueryResult, defineRelations, sql } from "drizzle-orm";
 
 const timestamps = {
   createdAt: timestamp().defaultNow().notNull(),
@@ -50,7 +50,7 @@ export type TradeRow = typeof trades.$inferSelect;
 
 export const cardDatas = pgTable("card_datas", {
   id: uuid().defaultRandom().primaryKey(),
-  name: varchar({ length: 255 }).notNull(),
+  name: varchar({ length: 255 }).notNull().unique(),
   ...timestamps,
 });
 export type NewCardDataRow = Omit<typeof cardDatas.$inferInsert, "id" | "createdAt" | "updatedAt">;
@@ -90,4 +90,98 @@ export type NewCardPrintingRow = Omit<
 >;
 export type CardPrintingRow = typeof cardPrintings.$inferSelect;
 
-export const relations = defineRelations({ cardDatas, cardPrintings, sets, trades }, (r) => ({}));
+export const relations = defineRelations({ cardDatas, cardPrintings, sets, trades }, (r) => ({
+  cardDatas: {
+    printings: r.many.cardPrintings({
+      from: r.cardDatas.id,
+      to: r.cardPrintings.cardId,
+    }),
+  },
+  cardPrintings: {
+    cardData: r.one.cardDatas({
+      from: r.cardPrintings.cardId,
+      to: r.cardDatas.id,
+    }),
+    set: r.one.sets({
+      from: r.cardPrintings.setId,
+      to: r.sets.id,
+    }),
+    trades: r.many.trades({
+      from: r.cardPrintings.id,
+      to: r.trades.printingId,
+    }),
+  },
+  sets: {
+    cardPrintings: r.many.cardPrintings({
+      from: r.sets.id,
+      to: r.cardPrintings.setId,
+    }),
+  },
+  trades: {
+    cardPrinting: r.one.cardPrintings({
+      from: r.trades.printingId,
+      to: r.cardPrintings.id,
+    }),
+  },
+}));
+
+export type CardPrintingWithCardData = BuildQueryResult<
+  typeof relations,
+  (typeof relations)["cardPrintings"],
+  {
+    with: {
+      cardData: true;
+    };
+  }
+>;
+
+export type CardPrintingWithCardDataAndSet = BuildQueryResult<
+  typeof relations,
+  (typeof relations)["cardPrintings"],
+  {
+    with: {
+      cardData: true;
+      set: true;
+    };
+  }
+>;
+
+export type ResolvedCardPrinting = Omit<CardPrintingWithCardDataAndSet, "cardData" | "set"> & {
+  cardData: NonNullable<CardPrintingWithCardDataAndSet["cardData"]>;
+  set: NonNullable<CardPrintingWithCardDataAndSet["set"]>;
+};
+
+export type CardDataWithPrintings = BuildQueryResult<
+  typeof relations,
+  (typeof relations)["cardDatas"],
+  {
+    with: {
+      printings: true;
+    };
+  }
+>;
+
+export type TradeWithCardPrinting = BuildQueryResult<
+  typeof relations,
+  (typeof relations)["trades"],
+  {
+    with: {
+      cardPrinting: true;
+    };
+  }
+>;
+
+export type TradeWithDetails = BuildQueryResult<
+  typeof relations,
+  (typeof relations)["trades"],
+  {
+    with: {
+      cardPrinting: {
+        with: {
+          cardData: true;
+          set: true;
+        };
+      };
+    };
+  }
+>;

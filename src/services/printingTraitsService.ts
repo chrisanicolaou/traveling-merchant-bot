@@ -24,6 +24,14 @@ export class PrintingTraitsService {
     return this.printingTraitNameMap[printingName.toLowerCase()] ?? PrintingTraits.None;
   }
 
+  formatTraits(traits: PrintingTraits): string {
+    if (traits === PrintingTraits.None) return "None";
+    const names = getPrintingTraitEntries()
+      .filter(([, value]) => value !== PrintingTraits.None && (traits & value) === value)
+      .map(([name]) => name);
+    return names.length > 0 ? names.join(", ") : "Unknown";
+  }
+
   getChoices(printingTraits: PrintingTraits): PrintingTraitChoice[] {
     const choices = getPrintingTraitEntries()
       .filter(([, value]) => value !== PrintingTraits.None && (printingTraits & value) === value)

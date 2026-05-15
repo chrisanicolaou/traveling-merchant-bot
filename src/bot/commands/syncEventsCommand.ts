@@ -22,7 +22,6 @@ export class SyncEventsCommand extends BaseCommand {
   }
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply();
     this.adminRoleId ??= this.services.config.get(CONFIG_KEY.DISCORD_GUILD_ADMIN_ROLE_ID);
     const userRoles = (interaction.member?.roles as GuildMemberRoleManager)?.cache;
 
@@ -30,6 +29,8 @@ export class SyncEventsCommand extends BaseCommand {
       await interaction.reply("You do not have permission to use this command.");
       return;
     }
+
+    await interaction.deferReply();
 
     const events: ApiRiftboundEvent[] = await this.services.eventsService.getEvents();
     const existingEvents = await interaction.guild?.scheduledEvents.fetch();

@@ -1,9 +1,20 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { type NodePgDatabase, drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { CONFIG_KEY, type ConfigService } from "../services/configService";
+import * as schema from "./schema";
+import { relations } from "./schema";
+
+export type AppDb = NodePgDatabase<typeof schema, typeof relations> & { $client: Pool };
 
 export class DbConnection {
-  private constructor(public readonly db: ReturnType<typeof drizzle>) {}
+  private constructor(
+    public readonly db: AppDb,
+    private readonly pool: Pool,
+  ) {}
+
+  async close() {
+    await this.pool.end();
+  }
 
   static async createAsync(config: ConfigService): Promise<DbConnection> {
     const host = config.get(CONFIG_KEY.POSTGRES_HOST);
@@ -33,10 +44,13 @@ export class DbConnection {
       }
     }
 
-    const db = drizzle(pool, {
+    const db = drizzle({
+      client: pool,
       casing: "snake_case",
+      schema,
+      relations,
     });
 
-    return new DbConnection(db);
+    return new DbConnection(db, pool);
   }
 }

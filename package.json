@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "db:update": "node scripts/ensure-local-postgres.mjs && drizzle-kit push --config=drizzle-local.config.ts",
+    "db:generate": "cross-env NODE_ENV=local drizzle-kit generate",
+    "db:migrate:local": "node scripts/ensure-local-postgres.mjs && cross-env NODE_ENV=local tsx src/db/migrate.ts",
     "dev:local": "node scripts/ensure-local-postgres.mjs && docker compose -f docker-compose.local.yaml up -d redis && cross-env NODE_ENV=local tsx src/index.ts",
+    "dev:prod": "docker compose up --build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

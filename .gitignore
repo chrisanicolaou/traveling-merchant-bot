@@ -26,3 +26,4 @@ jspm_packages/
 docker-compose.*yaml
 data/
 .vscode/
+.claude/

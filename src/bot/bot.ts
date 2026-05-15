@@ -49,6 +49,10 @@ export class Bot {
     );
   }
 
+  async shutdown() {
+    await this.client.destroy();
+  }
+
   private getCommandHandler(name: string): Command {
     const command = this.client.commands.get(name);
 

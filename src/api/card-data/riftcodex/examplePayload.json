@@ -1,0 +1,49 @@
+{
+  "items": [
+    {
+      "id": "69c5be6abf82ff7cb69f4292",
+      "name": "Arena Kingpin",
+      "riftbound_id": "unl-001-219",
+      "tcgplayer_id": "685942",
+      "collector_number": 1,
+      "attributes": {
+        "energy": 5,
+        "might": 3,
+        "power": null
+      },
+      "classification": {
+        "type": "Unit",
+        "supertype": null,
+        "rarity": "Common",
+        "domain": ["Fury"]
+      },
+      "text": {
+        "rich": "<p>I enter ready.<br />:rb_exhaust:: Give a unit +3 :rb_might: this turn.</p>",
+        "plain": "I enter ready.:rb_exhaust:: Give a unit +3 :rb_might: this turn.",
+        "flavour": "Don't you dare suggest it's a hairpiece."
+      },
+      "set": {
+        "set_id": "UNL",
+        "label": "Unleashed"
+      },
+      "media": {
+        "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/db48f8c1da0e4f9804ae94398f0864859db0002a-744x1039.png?accountingTag=RB",
+        "artist": "Kudos Productions",
+        "accessibility_text": "Riftbound Unit: Arena Kingpin. I enter ready.\n[T]: Give a unit +3 [S] this turn."
+      },
+      "tags": ["Yordle", "Noxus"],
+      "orientation": "portrait",
+      "metadata": {
+        "clean_name": "Arena Kingpin",
+        "updated_on": "2026-03-26T23:16:58.003600+00:00",
+        "alternate_art": false,
+        "overnumbered": false,
+        "signature": false
+      }
+    }
+  ],
+  "total": 1064,
+  "page": 1,
+  "size": 1,
+  "pages": 1064
+}

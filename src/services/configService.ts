@@ -7,8 +7,8 @@ export class ConfigService {
 
     switch (nodeEnv) {
       case "production":
-        envFile = ".env.production";
-        break;
+        // Env vars are injected by the container runtime (compose env_file); nothing to load from disk.
+        return;
       case "local":
         envFile = ".env.local";
         break;
@@ -26,6 +26,11 @@ export class ConfigService {
       throw new Error(`Missing required config value: ${key}`);
     }
     return value;
+  }
+
+  getOptional(key: CONFIG_KEY): string | undefined {
+    const value = process.env[key];
+    return value && value.length > 0 ? value : undefined;
   }
 }
 
@@ -48,4 +53,6 @@ export enum CONFIG_KEY {
   EVENTS_LATITUDE = "EVENTS_LATITUDE",
   EVENTS_LONGITUDE = "EVENTS_LONGITUDE",
   EVENTS_RADIUS_KM = "EVENTS_RADIUS_KM",
+  MARKET_PRICE_PROVIDER = "MARKET_PRICE_PROVIDER",
+  TCGCSV_CATEGORY_ID = "TCGCSV_CATEGORY_ID",
 }

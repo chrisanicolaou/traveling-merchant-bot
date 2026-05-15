@@ -2,9 +2,7 @@ import { createClient } from "redis";
 import { CONFIG_KEY, type ConfigService } from "./configService";
 
 export class CacheService {
-  private constructor(
-    private readonly client: ReturnType<typeof createClient>,
-  ) {}
+  private constructor(private readonly client: ReturnType<typeof createClient>) {}
 
   static async create(config: ConfigService): Promise<CacheService> {
     const host = config.get(CONFIG_KEY.REDIS_HOST);
@@ -24,11 +22,26 @@ export class CacheService {
     return value ? (JSON.parse(value) as T) : null;
   }
 
-  async set(key: string, value: unknown) {
-    await this.client.set(
-      key,
-      typeof value === "string" ? value : JSON.stringify(value),
-    );
+  async set(key: string, value: unknown, ttlSeconds?: number) {
+    const serialized = typeof value === "string" ? value : JSON.stringify(value);
+    if (ttlSeconds === undefined) {
+      await this.client.set(key, serialized);
+    } else {
+      await this.client.set(key, serialized, { EX: ttlSeconds });
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.client.del(key);
+  }
+
+  async acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
+    const result = await this.client.set(key, "1", { NX: true, EX: ttlSeconds });
+    return result === "OK";
+  }
+
+  async releaseLock(key: string): Promise<void> {
+    await this.client.del(key);
   }
 
   async shutdown() {
