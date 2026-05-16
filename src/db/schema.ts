@@ -6,6 +6,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -35,16 +36,26 @@ const printingTraits = customType<{
   },
 });
 
-export const trades = pgTable("trades", {
-  id: uuid().defaultRandom().primaryKey(),
-  printingId: uuid()
-    .notNull()
-    .references(() => cardPrintings.id),
-  discordUserId: varchar({ length: 255 }).notNull(),
-  direction: tradeDirection().notNull(), // 0 for buy, 1 for sell
-  quantity: integer().notNull().default(1),
-  ...timestamps,
-});
+export const trades = pgTable(
+  "trades",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    printingId: uuid()
+      .notNull()
+      .references(() => cardPrintings.id),
+    discordUserId: varchar({ length: 255 }).notNull(),
+    direction: tradeDirection().notNull(), // 0 for buy, 1 for sell
+    quantity: integer().notNull().default(1),
+    ...timestamps,
+  },
+  (t) => [
+    unique("trades_user_direction_printing_unique").on(
+      t.discordUserId,
+      t.direction,
+      t.printingId,
+    ),
+  ],
+);
 export type NewTradeRow = Omit<typeof trades.$inferInsert, "id" | "createdAt" | "updatedAt">;
 export type TradeRow = typeof trades.$inferSelect;
 

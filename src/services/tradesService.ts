@@ -8,6 +8,8 @@ import {
 } from "../db/schema.ts";
 import { TradeDirection } from "../shared/enums.ts";
 
+export const MAX_LISTING_QUANTITY = 99;
+
 export class TradeNotFoundError extends Error {
   constructor(tradeId: string) {
     super(`Trade ${tradeId} not found for user`);
@@ -15,17 +17,59 @@ export class TradeNotFoundError extends Error {
   }
 }
 
+export class TradeQuantityExceededError extends Error {
+  constructor(
+    public readonly existingQuantity: number,
+    public readonly attemptedDelta: number,
+  ) {
+    super(
+      `Listing total ${existingQuantity + attemptedDelta} exceeds the per-listing max of ${MAX_LISTING_QUANTITY}`,
+    );
+    this.name = "TradeQuantityExceededError";
+  }
+}
+
 export class TradesService {
   constructor(private readonly db: DbConnection["db"]) {}
 
-  async createTrade(trade: NewTradeRow): Promise<TradeRow> {
-    const [createdTrade] = await this.db.insert(trades).values(trade).returning();
+  async upsertTrade(
+    trade: NewTradeRow,
+  ): Promise<{ row: TradeRow; previousQuantity: number | null }> {
+    const delta = trade.quantity ?? 1;
+    return this.db.transaction(async (tx) => {
+      const existing = await tx.query.trades.findFirst({
+        where: {
+          discordUserId: trade.discordUserId,
+          direction: trade.direction,
+          printingId: trade.printingId,
+        },
+      });
 
-    if (!createdTrade) {
-      throw new Error("Failed to create trade");
-    }
+      if (existing) {
+        const newTotal = existing.quantity + delta;
+        if (newTotal > MAX_LISTING_QUANTITY) {
+          throw new TradeQuantityExceededError(existing.quantity, delta);
+        }
+        const [updated] = await tx
+          .update(trades)
+          .set({ quantity: newTotal })
+          .where(eq(trades.id, existing.id))
+          .returning();
+        if (!updated) {
+          throw new Error("Failed to update trade");
+        }
+        return { row: updated, previousQuantity: existing.quantity };
+      }
 
-    return createdTrade;
+      if (delta > MAX_LISTING_QUANTITY) {
+        throw new TradeQuantityExceededError(0, delta);
+      }
+      const [inserted] = await tx.insert(trades).values(trade).returning();
+      if (!inserted) {
+        throw new Error("Failed to insert trade");
+      }
+      return { row: inserted, previousQuantity: null };
+    });
   }
 
   async getTradesByDiscordUserId(discordUserId: string): Promise<TradeWithDetails[]> {

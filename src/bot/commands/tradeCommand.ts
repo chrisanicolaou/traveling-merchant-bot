@@ -17,6 +17,7 @@ import { PrintingTraits, TradeDirection } from "../../shared/enums";
 import type { Services } from "../../shared/types/services";
 import type { ResolvedCardPrinting, TradeRow } from "../../db/schema";
 import type { MarketPrice } from "../../api/market-price/marketPriceProvider";
+import { TradeQuantityExceededError } from "../../services/tradesService";
 
 const DISPLAY_CURRENCY = "GBP";
 
@@ -60,12 +61,24 @@ export abstract class TradeCommand extends BaseCommand {
         return;
       }
 
-      await this.services.tradesService.createTrade({
-        discordUserId: interaction.user.id,
-        direction: this.direction,
-        printingId: printing.id,
-        quantity,
-      });
+      let upsertResult;
+      try {
+        upsertResult = await this.services.tradesService.upsertTrade({
+          discordUserId: interaction.user.id,
+          direction: this.direction,
+          printingId: printing.id,
+          quantity,
+        });
+      } catch (error) {
+        if (error instanceof TradeQuantityExceededError) {
+          await interaction.editReply(
+            `You already have ${error.existingQuantity} ${error.existingQuantity === 1 ? "copy" : "copies"} on your list; adding ${error.attemptedDelta} would exceed the 99-copy limit per listing.`,
+          );
+          return;
+        }
+        throw error;
+      }
+      const { row, previousQuantity } = upsertResult;
 
       const [price, counterparts] = await Promise.all([
         this.fetchPriceSafe(printing.tcgplayerId),
@@ -73,7 +86,13 @@ export abstract class TradeCommand extends BaseCommand {
       ]);
       const displayPrice = await this.convertToDisplayCurrencySafe(price);
 
-      const embed = this.buildReplyEmbed(printing, quantity, displayPrice, counterparts);
+      const embed = this.buildReplyEmbed(
+        printing,
+        row.quantity,
+        previousQuantity,
+        displayPrice,
+        counterparts,
+      );
       const counterpartIds = [...new Set(counterparts.map((t) => t.discordUserId))];
 
       await interaction.editReply({
@@ -169,12 +188,14 @@ export abstract class TradeCommand extends BaseCommand {
 
   private buildReplyEmbed(
     printing: ResolvedCardPrinting,
-    quantity: number,
+    totalQuantity: number,
+    previousQuantity: number | null,
     price: DisplayPrice | null,
     counterparts: TradeRow[],
   ): EmbedBuilder {
     const isBuy = this.direction === TradeDirection.Buy;
-    const title = `${this.directionLabel()} listed: ${printing.cardData.name}`;
+    const action = previousQuantity === null ? "listed" : "updated";
+    const title = `${this.directionLabel()} ${action}: ${printing.cardData.name}`;
     const embed = new EmbedBuilder()
       .setTitle(title)
       .setColor(isBuy ? 0x2ecc71 : 0xe74c3c)
@@ -183,10 +204,14 @@ export abstract class TradeCommand extends BaseCommand {
     if (printing.imageUrl) embed.setThumbnail(printing.imageUrl);
 
     const traitsLabel = this.services.printingTraitsService.formatTraits(printing.traits);
+    const quantityValue =
+      previousQuantity === null
+        ? String(totalQuantity)
+        : `${totalQuantity} (was ${previousQuantity})`;
     embed.addFields(
       { name: "Set", value: `${printing.set.name} (${printing.set.id})`, inline: true },
       { name: "Traits", value: traitsLabel, inline: true },
-      { name: "Quantity", value: String(quantity), inline: true },
+      { name: "Quantity", value: quantityValue, inline: true },
       { name: "Market price", value: formatDisplayPrice(price, printing.cardData.name) },
       {
         name: isBuy ? "Selling this card" : "Looking to buy this card",

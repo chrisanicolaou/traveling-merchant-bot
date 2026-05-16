@@ -9,8 +9,9 @@ Discord bot for trading Riftbound TCG cards in a private Discord guild. TypeScri
 ## Common commands
 
 - `pnpm dev:local` — start Postgres + Redis via `docker-compose.local.yaml`, load `.env.local`, run `src/index.ts` with `tsx`.
-- `pnpm db:update` — ensure local Postgres is up, then `drizzle-kit push` using `drizzle-local.config.ts` (reads `.env.local`). Use this after editing `src/db/schema.ts` to sync the local DB.
-- `docker compose up` — production-shaped stack (bot + db + redis) reading root `.env`.
+- `pnpm db:generate` — after editing `src/db/schema.ts`, run `drizzle-kit generate` to produce a new SQL migration under `src/db/migrations/`. Commit the generated folder. Hand-edit the SQL if a data backfill or pre-step is required before a constraint can be applied.
+- `pnpm db:migrate:local` — ensure local Postgres is up, then run `src/db/migrate.ts` (drizzle's node-postgres migrator) against `.env.local` to apply any pending migrations. The same migrator runs at production startup via `src/db/migrate.ts`.
+- `pnpm dev:prod` (`docker compose up --build`) — production-shaped stack (bot + db + redis) reading root `.env`.
 - No test runner or lint script wired up. `pnpm test` is the npm-init placeholder. `prettier` is installed but not script-bound.
 
 Type-check on demand: `pnpm exec tsc --noEmit` (tsconfig has `noEmit: true`, `strict`, `noUncheckedIndexedAccess`).
@@ -55,7 +56,7 @@ Schema in `src/db/schema.ts`, `casing: "snake_case"` configured both in drizzle 
 
 `PrintingTraits` and `TradeDirection` (`src/shared/enums.ts`) are stored as `smallint` via `customType` wrappers. `PrintingTraits` is a **bitflag** enum — combine with `|`, test with `&`. `CardsService.getPrintingOptionsFromCardName` builds the bitmask from card-name parenthetical suffixes (e.g. `"Foo (Signature)"`).
 
-Two drizzle configs: `drizzle.config.ts` (hardcoded local creds, used by the docker stack path) and `drizzle-local.config.ts` (loads `.env.local`, used by `pnpm db:update`).
+One drizzle config: `drizzle.config.ts` selects the DB URL from `DATABASE_URL` or the `POSTGRES_*` env vars (loaded from `.env.local` when `NODE_ENV=local`, `.env` when `NODE_ENV=production`). It writes migrations to `src/db/migrations/`. Apply migrations via `pnpm db:migrate:local` (local) or the migrator that runs at production startup.
 
 ### Caching
 `CardsService` caches two derived lists in Redis: `full_card_names` (raw, with printing suffixes) and `card_names` (deduped base names). `getCardNames` will derive from the full-names cache if available before hitting the provider. No TTL set on either key.
@@ -66,4 +67,3 @@ Two drizzle configs: `drizzle.config.ts` (hardcoded local creds, used by the doc
 - `noUncheckedIndexedAccess` is on; array/index access returns `T | undefined`.
 - Discord commands are registered **as guild commands** to a single guild from `CONFIG_KEY.DISCORD_GUILD_ID`. This bot is not designed for multi-guild deployment.
 - README explicitly states use outside the owner's private Discord is not permitted; the public repo exists for the Riot API key application.
-- Status snapshot at the time of writing: `buyCommand.ts` still hardcodes `printingId: "TODO"` when creating a trade — buy flow is not wired to actual printing lookup yet.
