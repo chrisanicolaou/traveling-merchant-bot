@@ -7,6 +7,7 @@ import { CONFIG_KEY } from "../services/configService";
 import type { Services } from "../shared/types/services";
 import { BuyCommand } from "./commands/buyCommand";
 import { SellCommand } from "./commands/sellCommand";
+import { RemoveCommand } from "./commands/removeCommand";
 import { SyncCardDataCommand } from "./commands/syncCardDataCommand";
 import { SyncEventsCommand } from "./commands/syncEventsCommand";
 
@@ -17,6 +18,7 @@ export class CommandLoader {
     const commands: Command[] = [
       new BuyCommand(this.services),
       new SellCommand(this.services),
+      new RemoveCommand(this.services),
       new SyncCardDataCommand(this.services),
       new SyncEventsCommand(this.services),
     ];
