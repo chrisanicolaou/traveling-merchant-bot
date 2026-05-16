@@ -20,6 +20,7 @@ import {
 import { PrintingTraits } from "../shared/enums";
 import { CacheService } from "./cacheService";
 import { PrintingTraitsService } from "./printingTraitsService";
+import { normalizeCardName } from "./cardNameNormalization";
 
 export type SyncAllCardsResult = {
   pagesProcessed: number;
@@ -120,6 +121,47 @@ export class CardsService {
     if (!candidate) return null;
     if (!candidate.cardData || !candidate.set) {
       throw new Error(`Printing ${candidate.id} missing required cardData or set relation`);
+    }
+    return candidate as ResolvedCardPrinting;
+  }
+
+  async findCanonicalCardName(input: string): Promise<string | null> {
+    const normalizedInput = normalizeCardName(input);
+    if (normalizedInput.length === 0) return null;
+
+    const names = await this.getCardNames();
+    for (const name of names) {
+      if (normalizeCardName(name) === normalizedInput) return name;
+    }
+    return null;
+  }
+
+  async getLatestPrintingByName(
+    cardName: string,
+    traits: PrintingTraits,
+  ): Promise<ResolvedCardPrinting | null> {
+    const cardData = await this.db.query.cardDatas.findFirst({
+      where: { name: cardName },
+    });
+    if (!cardData) return null;
+
+    const printings = await this.db.query.cardPrintings.findMany({
+      where: { cardId: cardData.id, traits },
+      with: { cardData: true, set: true },
+    });
+    if (printings.length === 0) return null;
+
+    const sorted = printings
+      .filter((p): p is typeof p & { set: NonNullable<typeof p.set> } => p.set !== null)
+      .sort((a, b) => {
+        const aTime = a.set.releaseDate?.getTime() ?? -Infinity;
+        const bTime = b.set.releaseDate?.getTime() ?? -Infinity;
+        return bTime - aTime;
+      });
+    const candidate = sorted[0];
+    if (!candidate) return null;
+    if (!candidate.cardData) {
+      throw new Error(`Printing ${candidate.id} missing required cardData relation`);
     }
     return candidate as ResolvedCardPrinting;
   }

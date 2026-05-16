@@ -3,6 +3,11 @@ import { CommandLoader } from "./commandLoader";
 import type { Command } from "./commands/command";
 import { CONFIG_KEY, type ConfigService } from "../services/configService";
 import type { Services } from "../shared/types/services";
+import {
+  MODAL_CUSTOM_ID_PREFIX,
+  TradeBulkCommand,
+} from "./commands/tradeBulkCommand";
+import { CommandName } from "./constants";
 
 export class Bot {
   private client: Client;
@@ -38,6 +43,31 @@ export class Bot {
             return;
           }
           await command.autocomplete(interaction);
+        } catch (error) {
+          console.error(error);
+        }
+      } else if (interaction.isModalSubmit()) {
+        try {
+          const [prefix, direction] = interaction.customId.split(":");
+          if (prefix !== MODAL_CUSTOM_ID_PREFIX) return;
+
+          const commandName =
+            direction === "buy"
+              ? CommandName.BUYBULK
+              : direction === "sell"
+                ? CommandName.SELLBULK
+                : null;
+          if (!commandName) {
+            console.error(`Unknown tradebulk modal direction: ${direction}`);
+            return;
+          }
+
+          const command = this.getCommandHandler(commandName);
+          if (!(command instanceof TradeBulkCommand)) {
+            console.error(`Command ${commandName} is not a TradeBulkCommand`);
+            return;
+          }
+          await command.handleModalSubmit(interaction);
         } catch (error) {
           console.error(error);
         }

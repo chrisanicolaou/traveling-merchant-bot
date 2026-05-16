@@ -6,6 +6,7 @@ export class CommandName {
   public static readonly REMOVE = "remove";
   public static readonly SYNC_EVENTS = "sync-events";
   public static readonly SYNC_CARD_DATA = "sync-card-data";
+  public static readonly HELP = "help";
 }
 
 export class CommandOptionName {

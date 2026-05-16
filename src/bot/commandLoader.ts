@@ -7,9 +7,12 @@ import { CONFIG_KEY } from "../services/configService";
 import type { Services } from "../shared/types/services";
 import { BuyCommand } from "./commands/buyCommand";
 import { SellCommand } from "./commands/sellCommand";
+import { BuyBulkCommand } from "./commands/buyBulkCommand";
+import { SellBulkCommand } from "./commands/sellBulkCommand";
 import { RemoveCommand } from "./commands/removeCommand";
 import { SyncCardDataCommand } from "./commands/syncCardDataCommand";
 import { SyncEventsCommand } from "./commands/syncEventsCommand";
+import { HelpCommand } from "./commands/helpCommand";
 
 export class CommandLoader {
   constructor(private readonly services: Services) {}
@@ -18,9 +21,12 @@ export class CommandLoader {
     const commands: Command[] = [
       new BuyCommand(this.services),
       new SellCommand(this.services),
+      new BuyBulkCommand(this.services),
+      new SellBulkCommand(this.services),
       new RemoveCommand(this.services),
       new SyncCardDataCommand(this.services),
       new SyncEventsCommand(this.services),
+      new HelpCommand(this.services),
     ];
 
     client.commands = new Collection();
