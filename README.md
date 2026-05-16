@@ -1,6 +1,6 @@
 # TravelingMerchantBot
 
-A Discord bot that runs a card-trading marketplace for [Riftbound TCG](https://riftbound.leagueoflegends.com/en-gb/) inside a single private Discord guild. Members post the cards they want to buy or sell with `/buy` and `/sell`; the bot pins counterpart listings together and tags whoever can fill the other side of the trade.
+A Discord bot that runs a card-trading marketplace for [Riftbound TCG](https://riftbound.leagueoflegends.com/en-us) inside a single private Discord guild. Members post the cards they want to buy or sell with `/buy` and `/sell`; the bot pins counterpart listings together and tags whoever can fill the other side of the trade.
 
 ## What it does
 
@@ -8,7 +8,7 @@ A Discord bot that runs a card-trading marketplace for [Riftbound TCG](https://r
 - Looks up market prices (TCGplayer via [tcgcsv.com](https://tcgcsv.com/)) and converts them to GBP via [Frankfurter](https://frankfurter.dev/).
 - On every new listing, replies with the matching counterpart users and `@`-mentions them so trades get noticed.
 - Pulls upcoming local Riftbound events from [Riftfound](https://riftfound.com/) and mirrors them into the guild's scheduled events.
-- Auto-completes card names, sets, and printing traits from cached card data (sourced from [Riftcodex](https://riftcodex.gg/)).
+- Auto-completes card names, sets, and printing traits from cached card data (sourced from [Riftcodex](https://riftcodex.com/)).
 
 ## Slash commands
 
@@ -27,7 +27,7 @@ Admin commands gate on `DISCORD_GUILD_ADMIN_ROLE_ID`.
 
 ## Stack
 
-- **TypeScript** run directly with [`tsx`](https://tsx.is/) — no build step.
+- **TypeScript** run directly with [`tsx`](https://github.com/privatenumber/tsx) — no build step.
 - [discord.js](https://discord.js.org/) v14 for the gateway + slash commands.
 - **PostgreSQL** with [drizzle-orm](https://orm.drizzle.team/) (1.0 beta). Migrations live in `src/db/migrations/` and are applied automatically at production startup.
 - **Redis** for short-lived caches (card-name lists, sync locks, exchange rates, market prices).
